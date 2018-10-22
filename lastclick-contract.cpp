@@ -4,9 +4,9 @@
 #include <eosiolib/time.hpp>
 
 using namespace eosio;
-const auto INIT_GAME_DELAY = 100 * 60; // 100m
-const auto STEP_DELAY = 60;            // 1m
-const auto END_GAME_DELAY = 60;        //1 m
+const auto INIT_GAME_DELAY = 60 * 60; // m
+const auto STEP_DELAY = 60;           // 1m
+const auto END_GAME_DELAY = 60;       //1 m
 class lastclick : public eosio::contract
 {
 public:
@@ -64,6 +64,7 @@ public:
   [[eosio::action]] void claim() {
     auto itr = game_table.begin();
     eosio_assert(itr != game_table.end(), "game should start");
+    eosio_assert(itr->value.amount > 0, "game should start");
     eosio_assert(eosio::time_point_sec(now()) > (itr->endtime), "not yet");
     action(
         permission_level(_self, N(active)),
@@ -76,7 +77,7 @@ public:
       t.value = itr->value;
     });
 
-    game_table.erase(itr);
+    // game_table.erase(itr);
   };
   [[eosio::action]] void clearplayers(uint64_t gameid) {
     require_auth(_self);
@@ -109,9 +110,9 @@ public:
       auto trx = transaction();
       trx.actions.emplace_back(
           action(
-          permission_level(_self, N(active)),
-          N(eosio.token), N(transfer),
-          std::make_tuple(_self, referer, asset(referals, S(4, EOS)), std::string("Referral payment from eosEXPERIMENT.IO ==============> the most fair  game on EOS"))));
+              permission_level(_self, N(active)),
+              N(eosio.token), N(transfer),
+              std::make_tuple(_self, referer, asset(referals, S(4, EOS)), std::string("Referral payment from eosEXPERIMENT.IO ==============> the most fair  game on EOS"))));
       trx.send(id, _self);
     }
   }
@@ -170,7 +171,7 @@ public:
       game_table.emplace(_self, [&](game &g) {
         g.players = 1;
         g.bets = 1;
-        g.value = asset(bet, S(4, EOS));
+        g.value = asset(1000000, S(4, EOS));
         g.winner = from;
 
         delay = getDelayForPot(g.players);
